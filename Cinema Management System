@@ -1,0 +1,357 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+struct Movie {
+    string MovieName;
+    string Genre;
+    int hours;
+    int minutes;
+    int SilverSeats;
+    int PlatinumSeats;
+    double SilverPrice;
+    double PlatinumPrice;
+    bool SilverBooked[60];
+    bool PlatinumBooked[30];
+};
+
+Movie movies[10];
+int MovieCount = 0;
+
+/* ================= SAVE TO FILE ================= */
+
+void SaveMoviesToFile() {
+    ofstream file("movies.txt");
+
+    for (int i = 0; i < MovieCount; i++) {
+        file << "Movie: " << movies[i].MovieName << endl;
+        file << "Time: " << movies[i].hours << ":"
+             << (movies[i].minutes < 10 ? "0" : "") << movies[i].minutes << endl;
+        file << "Genre: " << movies[i].Genre << endl;
+        file << "Silver: " << movies[i].SilverSeats << endl;
+        file << "Platinum: " << movies[i].PlatinumSeats << endl;
+
+        file << "SilverSeats: ";
+        for (int j = 0; j < movies[i].SilverSeats; j++)
+            file << movies[i].SilverBooked[j] << " ";
+        file << endl;
+
+        file << "PlatinumSeats: ";
+        for (int j = 0; j < movies[i].PlatinumSeats; j++)
+            file << movies[i].PlatinumBooked[j] << " ";
+        file << endl;
+
+        file << "--------------------------" << endl;
+    }
+
+    file.close();
+}
+
+/* ================= LOAD MOVIES ================= */
+
+void LoadMoviesFromFile() {
+    ifstream file("movies.txt");
+    MovieCount = 0;
+
+    while (file && MovieCount < 10) {
+        string temp;
+        getline(file, temp);
+        if (temp.find("Movie:") == string::npos) break;
+
+        movies[MovieCount].MovieName = temp.substr(7);
+        file >> temp >> movies[MovieCount].hours;
+        file.ignore();
+        file >> movies[MovieCount].minutes;
+        file.ignore();
+
+        file >> temp;
+        getline(file, movies[MovieCount].Genre);
+
+        file >> temp >> movies[MovieCount].SilverSeats;
+        file >> temp >> movies[MovieCount].PlatinumSeats;
+
+        movies[MovieCount].SilverPrice = 500;
+        movies[MovieCount].PlatinumPrice = 1000;
+
+        file >> temp;
+        for (int i = 0; i < movies[MovieCount].SilverSeats; i++)
+            file >> movies[MovieCount].SilverBooked[i];
+
+        file >> temp;
+        for (int i = 0; i < movies[MovieCount].PlatinumSeats; i++)
+            file >> movies[MovieCount].PlatinumBooked[i];
+
+        getline(file, temp);
+        getline(file, temp);
+
+        MovieCount++;
+    }
+
+    file.close();
+}
+
+/* ================= ADD MOVIE ================= */
+
+void AddMovie() {
+    if (MovieCount >= 10) {
+        cout << endl << "Cannot add more movies. Maximum limit reached!" << endl;
+        return;
+    }
+
+    cin.ignore();
+    cout << endl << "Enter Movie Name: ";
+    getline(cin, movies[MovieCount].MovieName);
+
+    cout << "Enter Genre: ";
+    getline(cin, movies[MovieCount].Genre);
+
+    cout << "Enter Show Time (hours): ";
+    cin >> movies[MovieCount].hours;
+
+    cout << "Enter Show Time (minutes): ";
+    cin >> movies[MovieCount].minutes;
+
+    cout << "Enter number of Silver seats: ";
+    cin >> movies[MovieCount].SilverSeats;
+
+    cout << "Enter number of Platinum seats: ";
+    cin >> movies[MovieCount].PlatinumSeats;
+
+    cout << "Enter Silver seat price: ";
+    cin >> movies[MovieCount].SilverPrice;
+
+    cout << "Enter Platinum seat price: ";
+    cin >> movies[MovieCount].PlatinumPrice;
+
+    // Initialize all seats as available (false = not booked)
+    for (int i = 0; i < movies[MovieCount].SilverSeats; i++) {
+        movies[MovieCount].SilverBooked[i] = false;
+    }
+
+    for (int i = 0; i < movies[MovieCount].PlatinumSeats; i++) {
+        movies[MovieCount].PlatinumBooked[i] = false;
+    }
+
+    MovieCount++;
+
+    SaveMoviesToFile();
+
+    cout << endl << "Movie added successfully!" << endl;
+}
+
+/* ================= VIEW MOVIES ================= */
+
+void ViewMovies() {
+    if (MovieCount == 0) {
+        cout << endl << "No movies available." << endl;
+        return;
+    }
+
+    for (int i = 0; i < MovieCount; i++) {
+        cout << endl << i + 1 << ". " << movies[i].MovieName << endl;
+        cout << "Genre: " << movies[i].Genre << endl;
+        cout << "Time: " << movies[i].hours << ":"
+             << (movies[i].minutes < 10 ? "0" : "") << movies[i].minutes << endl;
+    }
+}
+
+/* ================= SHOW SEATS ================= */
+
+void ShowSeats(int m, int type) {
+    int seats = (type == 1) ? movies[m].SilverSeats : movies[m].PlatinumSeats;
+    bool* booked = (type == 1) ? movies[m].SilverBooked : movies[m].PlatinumBooked;
+
+    cout << endl;
+    for (int i = 0; i < seats; i++) {
+        if (booked[i]) cout << "[XX] ";
+        else cout << "[" << i + 1 << "] ";
+
+        if ((i + 1) % 10 == 0) cout << endl;
+    }
+    cout << endl;
+}
+
+/* ================= BOOK TICKET ================= */
+
+void BookTicket() {
+    ViewMovies();
+
+    int m, type, seat;
+    cout << endl << "Select movie: ";
+    cin >> m;
+    m--;
+
+    if (m < 0 || m >= MovieCount) {
+        cout << endl << "Invalid movie selection!" << endl;
+        return;
+    }
+
+    cout << "1. Silver  2. Platinum" << endl;
+    cin >> type;
+
+    if (type != 1 && type != 2) {
+        cout << endl << "Invalid seat type!" << endl;
+        return;
+    }
+
+    ShowSeats(m, type);
+
+    cout << "Enter seat number: ";
+    cin >> seat;
+
+    int maxSeats = (type == 1) ? movies[m].SilverSeats : movies[m].PlatinumSeats;
+    if (seat < 1 || seat > maxSeats) {
+        cout << endl << "Invalid seat number!" << endl;
+        return;
+    }
+
+    bool* booked = (type == 1) ? movies[m].SilverBooked : movies[m].PlatinumBooked;
+
+    if (booked[seat - 1]) {
+        cout << endl << "Seat unavailable!" << endl;
+        return;
+    }
+
+    booked[seat - 1] = true;
+
+    string name, cnic;
+    cin.ignore();
+    cout << "Enter Name: ";
+    getline(cin, name);
+    cout << "Enter CNIC: ";
+    getline(cin, cnic);
+
+    double price = (type == 1) ? movies[m].SilverPrice : movies[m].PlatinumPrice;
+
+    // Print receipt on screen
+    cout << endl << "=========== RECEIPT ===========" << endl;
+    cout << "Customer Name: " << name << endl;
+    cout << "CNIC: " << cnic << endl;
+    cout << "Movie: " << movies[m].MovieName << endl;
+    cout << "Movie Time: " << movies[m].hours << ":"
+         << (movies[m].minutes < 10 ? "0" : "") << movies[m].minutes << endl;
+    cout << "Genre: " << movies[m].Genre << endl;
+    cout << "Seat: " << (type == 1 ? "Silver" : "Platinum") << " " << seat << endl;
+    cout << "Total Bill: Rs. " << price << endl;
+    cout << "================================" << endl;
+
+    // Save booking receipt to file
+    ofstream file("bookings.txt", ios::app);
+    file << "=========== RECEIPT ===========" << endl;
+    file << "Customer Name: " << name << endl;
+    file << "CNIC: " << cnic << endl;
+    file << "Movie: " << movies[m].MovieName << endl;
+    file << "Movie Time: " << movies[m].hours << ":"
+         << (movies[m].minutes < 10 ? "0" : "") << movies[m].minutes << endl;
+    file << "Genre: " << movies[m].Genre << endl;
+    file << "Seat: " << (type == 1 ? "Silver" : "Platinum") << " " << seat << endl;
+    file << "Total Bill: Rs. " << price << endl;
+    file << "================================" << endl << endl;
+    file.close();
+
+    SaveMoviesToFile();
+}
+
+/* ================= DELETE MOVIE ================= */
+
+void DeleteMovie() {
+    ViewMovies();
+
+    if (MovieCount == 0) {
+        return;
+    }
+
+    int m;
+    cout << endl << "Select movie to delete: ";
+    cin >> m;
+    m--;
+
+    if (m < 0 || m >= MovieCount) {
+        cout << endl << "Invalid movie selection!" << endl;
+        return;
+    }
+
+    string deletedMovie = movies[m].MovieName;
+
+    // Shift all movies after deleted one
+    for (int i = m; i < MovieCount - 1; i++) {
+        movies[i] = movies[i + 1];
+    }
+
+    MovieCount--;
+
+    SaveMoviesToFile();
+
+    cout << endl << "Movie \"" << deletedMovie << "\" deleted successfully!" << endl;
+}
+
+/* ================= PORTALS ================= */
+
+void ManagerPortal() {
+    string pass;
+    cout << endl << "Enter password: ";
+    cin >> pass;
+
+    if (pass != "1234") {
+        cout << endl << "Incorrect password!" << endl;
+        return;
+    }
+
+    int ch;
+    do {
+        cout << endl << "===== MANAGER PORTAL =====" << endl;
+        cout << "1. Add Movie" << endl;
+        cout << "2. View Movies" << endl;
+        cout << "3. Delete Movie" << endl;
+        cout << "4. Exit" << endl;
+        cout << "Enter choice: ";
+        cin >> ch;
+
+        if (ch == 1) AddMovie();
+        else if (ch == 2) ViewMovies();
+        else if (ch == 3) DeleteMovie();
+
+    } while (ch != 4);
+}
+
+void CustomerPortal() {
+    int ch;
+    do {
+        cout << endl << "===== CUSTOMER PORTAL =====" << endl;
+        cout << "1. View Movies" << endl;
+        cout << "2. Book Ticket" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Enter choice: ";
+        cin >> ch;
+
+        if (ch == 1) ViewMovies();
+        else if (ch == 2) BookTicket();
+
+    } while (ch != 3);
+}
+
+/* ================= MAIN ================= */
+
+int main() {
+    LoadMoviesFromFile();
+    cout << "===== CINEMA BOOKING SYSTEM =====" << endl;
+
+    int ch;
+    do {
+        cout << endl << "===== MAIN MENU =====" << endl;
+        cout << "1. Manager" << endl;
+        cout << "2. Customer" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Enter choice: ";
+        cin >> ch;
+
+        if (ch == 1) ManagerPortal();
+        else if (ch == 2) CustomerPortal();
+
+    } while (ch != 3);
+
+    SaveMoviesToFile();
+    cout << endl << "Thank you for using Cinema Booking System!" << endl;
+    return 0;
+}
