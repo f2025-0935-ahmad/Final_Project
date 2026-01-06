@@ -1,0 +1,452 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+struct Train {
+    string FromCity;
+    string ToCity;
+    int hours;
+    int minutes;
+    int BusinessSeats;
+    int EconomySeats;
+    double BusinessPrice;
+    double EconomyPrice;
+    bool BusinessBooked[20];
+    bool EconomyBooked[50];
+    bool BusinessDisabled[20];
+    bool EconomyDisabled[50];
+};
+
+Train trains[10];
+int TrainCount = 0;
+
+void SaveTrainsToFile() {
+    ofstream file("trains.txt");
+    file << TrainCount << endl;
+    
+    for(int i = 0; i < TrainCount; i++) {
+        file << trains[i].FromCity << endl;
+        file << trains[i].ToCity << endl;
+        file << trains[i].hours << endl;
+        file << trains[i].minutes << endl;
+        file << trains[i].BusinessSeats << endl;
+        file << trains[i].EconomySeats << endl;
+        file << trains[i].BusinessPrice << endl;
+        file << trains[i].EconomyPrice << endl;
+        
+        for(int j = 0; j < trains[i].BusinessSeats; j++) {
+            file << trains[i].BusinessBooked[j] << " ";
+        }
+        file << endl;
+        
+        for(int j = 0; j < trains[i].EconomySeats; j++) {
+            file << trains[i].EconomyBooked[j] << " ";
+        }
+        file << endl;
+        
+        for(int j = 0; j < trains[i].BusinessSeats; j++) {
+            file << trains[i].BusinessDisabled[j] << " ";
+        }
+        file << endl;
+        
+        for(int j = 0; j < trains[i].EconomySeats; j++) {
+            file << trains[i].EconomyDisabled[j] << " ";
+        }
+        file << endl;
+    }
+    file.close();
+}
+
+void LoadTrainsFromFile() {
+    ifstream file("trains.txt");
+    if(file.is_open()) {
+        file >> TrainCount;
+        file.ignore();
+        
+        for(int i = 0; i < TrainCount; i++) {
+            getline(file, trains[i].FromCity);
+            getline(file, trains[i].ToCity);
+            file >> trains[i].hours;
+            file >> trains[i].minutes;
+            file >> trains[i].BusinessSeats;
+            file >> trains[i].EconomySeats;
+            file >> trains[i].BusinessPrice;
+            file >> trains[i].EconomyPrice;
+            
+            for(int j = 0; j < trains[i].BusinessSeats; j++) {
+                file >> trains[i].BusinessBooked[j];
+            }
+            
+            for(int j = 0; j < trains[i].EconomySeats; j++) {
+                file >> trains[i].EconomyBooked[j];
+            }
+            
+            for(int j = 0; j < trains[i].BusinessSeats; j++) {
+                file >> trains[i].BusinessDisabled[j];
+            }
+            
+            for(int j = 0; j < trains[i].EconomySeats; j++) {
+                file >> trains[i].EconomyDisabled[j];
+            }
+            file.ignore();
+        }
+        file.close();
+    }
+}
+
+void AddTrain() {
+    if(TrainCount >= 10) {
+        cout << "\nMaximum train limit reached!" << endl;
+        return;
+    }
+    
+    cout << "\n--- Add New Train ---" << endl;
+    cin.ignore();
+    cout << "Enter starting city: ";
+    getline(cin, trains[TrainCount].FromCity);
+    cout << "Enter destination city: ";
+    getline(cin, trains[TrainCount].ToCity);
+    cout << "Enter departure time (hours 0-23): ";
+    cin >> trains[TrainCount].hours;
+    cout << "Enter departure time (minutes 0-59): ";
+    cin >> trains[TrainCount].minutes;
+    cout << "Enter number of business seats (max 20): ";
+    cin >> trains[TrainCount].BusinessSeats;
+    cout << "Enter number of economy seats (max 50): ";
+    cin >> trains[TrainCount].EconomySeats;
+    cout << "Enter business class ticket price: ";
+    cin >> trains[TrainCount].BusinessPrice;
+    cout << "Enter economy class ticket price: ";
+    cin >> trains[TrainCount].EconomyPrice;
+    
+    for(int i = 0; i < trains[TrainCount].BusinessSeats; i++) {
+        trains[TrainCount].BusinessBooked[i] = false;
+        trains[TrainCount].BusinessDisabled[i] = false;
+    }
+    for(int i = 0; i < trains[TrainCount].EconomySeats; i++) {
+        trains[TrainCount].EconomyBooked[i] = false;
+        trains[TrainCount].EconomyDisabled[i] = false;
+    }
+    
+    TrainCount++;
+    SaveTrainsToFile();
+    cout << "\nTrain added successfully!" << endl;
+}
+
+void DeleteTrain() {
+    if(TrainCount == 0) {
+        cout << "\nNo trains available." << endl;
+        return;
+    }
+    
+    cout << "\n--- Delete Train ---" << endl;
+    for(int i = 0; i < TrainCount; i++) {
+        cout << i+1 << ". " << trains[i].FromCity << " to " << trains[i].ToCity << endl;
+    }
+    
+    int choice;
+    cout << "\nEnter train number to delete: ";
+    cin >> choice;
+    
+    if(choice < 1 || choice > TrainCount) {
+        cout << "Invalid choice!" << endl;
+        return;
+    }
+    
+    for(int i = choice-1; i < TrainCount-1; i++) {
+        trains[i] = trains[i+1];
+    }
+    TrainCount--;
+    SaveTrainsToFile();
+    cout << "Train deleted successfully!" << endl;
+}
+
+void ViewTrains() {
+    if(TrainCount == 0) {
+        cout << "\nNo trains available." << endl;
+        return;
+    }
+    
+    cout << "\n========== Available Trains ==========" << endl;
+    for(int i = 0; i < TrainCount; i++) {
+        cout << "\nTrain " << i+1 << ":" << endl;
+        cout << "From: " << trains[i].FromCity << " To: " << trains[i].ToCity << endl;
+        cout << "Time: " << trains[i].hours << ":" << trains[i].minutes << endl;
+        cout << "Business Seats: " << trains[i].BusinessSeats << " Price: $" << trains[i].BusinessPrice << endl;
+        cout << "Economy Seats: " << trains[i].EconomySeats << " Price: $" << trains[i].EconomyPrice << endl;
+    }
+}
+
+void ShowSeats(int trainIndex, int classType) {
+    cout << "\n--- Seat Layout ---" << endl;
+    
+    if(classType == 1) {
+        cout << "Business Class Seats:" << endl;
+        for(int i = 0; i < trains[trainIndex].BusinessSeats; i++) {
+            if(trains[trainIndex].BusinessDisabled[i]) {
+                cout << "[XX] ";
+            } else if(trains[trainIndex].BusinessBooked[i]) {
+                cout << "[X] ";
+            } else {
+                cout << "[" << i+1 << "] ";
+            }
+            if((i+1) % 4 == 0) cout << endl;
+        }
+    } else {
+        cout << "Economy Class Seats:" << endl;
+        for(int i = 0; i < trains[trainIndex].EconomySeats; i++) {
+            if(trains[trainIndex].EconomyDisabled[i]) {
+                cout << "[XX] ";
+            } else if(trains[trainIndex].EconomyBooked[i]) {
+                cout << "[X] ";
+            } else {
+                cout << "[" << i+1 << "] ";
+            }
+            if((i+1) % 5 == 0) cout << endl;
+        }
+    }
+    cout << "\n[X]=Booked  [XX]=Disabled  [Number]=Available" << endl;
+}
+
+void BookTicket() {
+    if(TrainCount == 0) {
+        cout << "\nNo trains available." << endl;
+        return;
+    }
+    
+    ViewTrains();
+    
+    int trainChoice;
+    cout << "\nSelect train number: ";
+    cin >> trainChoice;
+    
+    if(trainChoice < 1 || trainChoice > TrainCount) {
+        cout << "Invalid train!" << endl;
+        return;
+    }
+    trainChoice--;
+    
+    int classType;
+    cout << "\n1. Business Class\n2. Economy Class\nChoice: ";
+    cin >> classType;
+    
+    if(classType != 1 && classType != 2) {
+        cout << "Invalid class!" << endl;
+        return;
+    }
+    
+    ShowSeats(trainChoice, classType);
+    
+    int seatNumber;
+    cout << "\nEnter seat number: ";
+    cin >> seatNumber;
+    
+    if(classType == 1) {
+        if(seatNumber < 1 || seatNumber > trains[trainChoice].BusinessSeats) {
+            cout << "Invalid seat number!" << endl;
+            return;
+        }
+        if(trains[trainChoice].BusinessDisabled[seatNumber-1]) {
+            cout << "Seat is disabled!" << endl;
+            return;
+        }
+        if(trains[trainChoice].BusinessBooked[seatNumber-1]) {
+            cout << "Seat already booked!" << endl;
+            return;
+        }
+        trains[trainChoice].BusinessBooked[seatNumber-1] = true;
+    } else {
+        if(seatNumber < 1 || seatNumber > trains[trainChoice].EconomySeats) {
+            cout << "Invalid seat number!" << endl;
+            return;
+        }
+        if(trains[trainChoice].EconomyDisabled[seatNumber-1]) {
+            cout << "Seat is disabled!" << endl;
+            return;
+        }
+        if(trains[trainChoice].EconomyBooked[seatNumber-1]) {
+            cout << "Seat already booked!" << endl;
+            return;
+        }
+        trains[trainChoice].EconomyBooked[seatNumber-1] = true;
+    }
+    
+    string name;
+    cin.ignore();
+    cout << "\nEnter passenger name: ";
+    getline(cin, name);
+    
+    SaveTrainsToFile();
+    
+    cout << "\n========== TICKET ==========" << endl;
+    cout << "Name: " << name << endl;
+    cout << "From: " << trains[trainChoice].FromCity << " To: " << trains[trainChoice].ToCity << endl;
+    cout << "Time: " << trains[trainChoice].hours << ":" << trains[trainChoice].minutes << endl;
+    cout << "Class: " << (classType == 1 ? "Business" : "Economy") << endl;
+    cout << "Seat: " << seatNumber << endl;
+    cout << "Price: $" << (classType == 1 ? trains[trainChoice].BusinessPrice : trains[trainChoice].EconomyPrice) << endl;
+    cout << "============================" << endl;
+}
+
+void DiscardSeat() {
+    if(TrainCount == 0) {
+        cout << "\nNo trains available." << endl;
+        return;
+    }
+    
+    cout << "\n--- Disable Seat ---" << endl;
+    for(int i = 0; i < TrainCount; i++) {
+        cout << i+1 << ". " << trains[i].FromCity << " to " << trains[i].ToCity << endl;
+    }
+    
+    int trainChoice;
+    cout << "\nSelect train: ";
+    cin >> trainChoice;
+    
+    if(trainChoice < 1 || trainChoice > TrainCount) {
+        cout << "Invalid train!" << endl;
+        return;
+    }
+    trainChoice--;
+    
+    int classType;
+    cout << "\n1. Business Class\n2. Economy Class\nChoice: ";
+    cin >> classType;
+    
+    if(classType != 1 && classType != 2) {
+        cout << "Invalid class!" << endl;
+        return;
+    }
+    
+    ShowSeats(trainChoice, classType);
+    
+    int seatNumber;
+    cout << "\nEnter seat number to disable: ";
+    cin >> seatNumber;
+    
+    if(classType == 1) {
+        if(seatNumber < 1 || seatNumber > trains[trainChoice].BusinessSeats) {
+            cout << "Invalid seat!" << endl;
+            return;
+        }
+        
+        if(trains[trainChoice].BusinessDisabled[seatNumber-1]) {
+            char enable;
+            cout << "Seat already disabled. Enable it? (y/n): ";
+            cin >> enable;
+            if(enable == 'y' || enable == 'Y') {
+                trains[trainChoice].BusinessDisabled[seatNumber-1] = false;
+                cout << "Seat enabled!" << endl;
+            }
+        } else {
+            trains[trainChoice].BusinessDisabled[seatNumber-1] = true;
+            cout << "Seat " << seatNumber << " disabled!" << endl;
+        }
+    } else {
+        if(seatNumber < 1 || seatNumber > trains[trainChoice].EconomySeats) {
+            cout << "Invalid seat!" << endl;
+            return;
+        }
+        
+        if(trains[trainChoice].EconomyDisabled[seatNumber-1]) {
+            char enable;
+            cout << "Seat already disabled. Enable it? (y/n): ";
+            cin >> enable;
+            if(enable == 'y' || enable == 'Y') {
+                trains[trainChoice].EconomyDisabled[seatNumber-1] = false;
+                cout << "Seat enabled!" << endl;
+            }
+        } else {
+            trains[trainChoice].EconomyDisabled[seatNumber-1] = true;
+            cout << "Seat " << seatNumber << " disabled!" << endl;
+        }
+    }
+    
+    SaveTrainsToFile();
+}
+
+void ManagerPortal() {
+    string password;
+    cout << "\nEnter password: ";
+    cin >> password;
+    
+    if(password != "1234") {
+        cout << "Wrong password!" << endl;
+        return;
+    }
+    
+    int choice;
+    while(true) {
+        cout << "\n===== Manager Portal =====" << endl;
+        cout << "1. Add Train" << endl;
+        cout << "2. Delete Train" << endl;
+        cout << "3. Disable Seat" << endl;
+        cout << "4. Exit" << endl;
+        cout << "Choice: ";
+        cin >> choice;
+        
+        if(choice == 1) {
+            AddTrain();
+        } else if(choice == 2) {
+            DeleteTrain();
+        } else if(choice == 3) {
+            DiscardSeat();
+        } else if(choice == 4) {
+            break;
+        } else {
+            cout << "Invalid choice!" << endl;
+        }
+    }
+}
+
+void CustomerPortal() {
+    int choice;
+    while(true) {
+        cout << "\n===== Customer Portal =====" << endl;
+        cout << "1. View Trains" << endl;
+        cout << "2. Book Ticket" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Choice: ";
+        cin >> choice;
+        
+        if(choice == 1) {
+            ViewTrains();
+        } else if(choice == 2) {
+            BookTicket();
+        } else if(choice == 3) {
+            break;
+        } else {
+            cout << "Invalid choice!" << endl;
+        }
+    }
+}
+
+int main() {
+    LoadTrainsFromFile();
+    
+    int choice;
+    while(true) {
+        cout << "\n=============================" << endl;
+        cout << "  TRAIN MANAGEMENT SYSTEM" << endl;
+        cout << "=============================" << endl;
+        cout << "1. Manager Portal" << endl;
+        cout << "2. Customer Portal" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Choice: ";
+        cin >> choice;
+        
+        if(choice == 1) {
+            ManagerPortal();
+        } else if(choice == 2) {
+            CustomerPortal();
+        } else if(choice == 3) {
+            cout << "\nThank you! Goodbye!" << endl;
+            break;
+        } else {
+            cout << "Invalid choice!" << endl;
+        }
+    }
+    
+    return 0;
+}
